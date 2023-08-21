@@ -9,15 +9,68 @@ import (
 )
 
 func main() {
-	fmt.Println(RollString("2d20"))
+	fmt.Println(RollString("1d5"))
 }
 
-type die struct {
+type DicePool struct {
+	Rollset []Rollset
+}
+
+// Roll and resolve a DicePool
+func (dp *DicePool) DirectRoll(random *rand.Rand) (sum int) {
+	for i := 0; i < len(dp.Rollset); i++ {
+		s, _ := dp.Rollset[i].DirectRoll(random)
+		sum = +s
+	}
+	return sum
+}
+func (dp *DicePool) Roll() (sum int) {
+	timesource := rand.NewSource(time.Now().UnixNano())
+	rando := rand.New(timesource)
+	return dp.DirectRoll(rando)
+}
+
+type Rollset struct {
+	dice     []Die
+	modifier int    // Plus or minus an ammount
+	keep     string // high,low or ""
+}
+
+// Resolves a Rollset with a seed
+func (rs *Rollset) DirectRoll(random *rand.Rand) (sum int, rolls []int) {
+	for i := 0; i < len(rs.dice); i++ {
+		rolls = append(rolls, rs.dice[i].DirectRole(random))
+	}
+	for i := 0; i < len(rolls); i++ {
+		sum = +rolls[i]
+	}
+	return sum, rolls
+}
+
+func (rs *Rollset) Roll() (sum int, rolls []int) {
+	timesource := rand.NewSource(time.Now().UnixNano())
+	rando := rand.New(timesource)
+	return rs.DirectRoll(rando)
+}
+
+type Die struct {
 	size int
 }
 
-// Takes a single dienotation and returns a dicepool
-func dienotationdigest(dienotation string) (results []die) {
+// Rolls a die and returns the results based on the current time
+func (d *Die) Roll() (result int) {
+	timesource := rand.NewSource(time.Now().UnixNano())
+	rando := rand.New(timesource)
+	return d.DirectRole(rando)
+}
+
+// Rolls the die but accepts a rand object pointer, useful for repetable generation
+func (d *Die) DirectRole(random *rand.Rand) (results int) {
+	return random.Intn(d.size) + 1
+}
+
+// Takes a single dienotation and returns a Rollset
+func SingleDieNotationToRollset(dienotation string) (results Rollset) {
 
 	working := strings.TrimSpace(dienotation)
 	working = strings.ToLower(working)
@@ -32,39 +85,18 @@ func dienotationdigest(dienotation string) (results []die) {
 		sides, _ := strconv.Atoi(stringsize)
 
 		for i := 0; i < muliplier; i++ {
-			newdie := die{
+			newdie := Die{
 				size: sides,
 			}
-			results = append(results, newdie)
+			results.dice = append(results.dice, newdie)
 		}
 		return results
 	}
 }
 
-// Rolls a dice pool and shows their sums and rolls
-func RollDicePool(dice []die) (sum int, rolls []int) {
-	for i := 0; i < len(dice); i++ {
-		results := RollDie(dice[i])
-		sum = sum + results
-		rolls = append(rolls, results)
-	}
-	return sum, rolls
-}
-
 // Takes a dienotation string and rolls it
-func RollString(roll string) int {
-	rollresults, _ := RollDicePool(dienotationdigest(roll))
-	return rollresults
-}
-
-// RollDie takes a die and returns the results based on the current time
-func RollDie(die die) (results int) {
-	timesource := rand.NewSource(time.Now().UnixNano())
-	rando := rand.New(timesource)
-	return DirectRoleDie(die, rando)
-}
-
-// Rolls a Die but accepted a rand object pointer, useful for repetable generation
-func DirectRoleDie(die die, random *rand.Rand) (results int) {
-	return random.Intn(die.size) + 1
+func RollString(roll string) (results int) {
+	working := SingleDieNotationToRollset(roll)
+	results, _ = working.Roll()
+	return
 }

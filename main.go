@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	fmt.Println(RollString("1d5"))
+	fmt.Println(RollString("5d20"))
 }
 
 type DicePool struct {
@@ -20,7 +20,7 @@ type DicePool struct {
 func (dp *DicePool) DirectRoll(random *rand.Rand) (sum int) {
 	for i := 0; i < len(dp.Rollset); i++ {
 		s, _ := dp.Rollset[i].DirectRoll(random)
-		sum = +s
+		sum = sum + s
 	}
 	return sum
 }
@@ -42,7 +42,7 @@ func (rs *Rollset) DirectRoll(random *rand.Rand) (sum int, rolls []int) {
 		rolls = append(rolls, rs.dice[i].DirectRole(random))
 	}
 	for i := 0; i < len(rolls); i++ {
-		sum = +rolls[i]
+		sum = sum + rolls[i]
 	}
 	return sum, rolls
 }
@@ -95,8 +95,7 @@ func SingleDieNotationToRollset(dienotation string) (results Rollset) {
 }
 
 // Takes a dienotation string and rolls it
-func RollString(roll string) (results int) {
+func RollString(roll string) (results int, rolls []int) {
 	working := SingleDieNotationToRollset(roll)
-	results, _ = working.Roll()
-	return
+	return working.Roll()
 }

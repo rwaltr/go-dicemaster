@@ -44,6 +44,7 @@ func (rs *Rollset) DirectRoll(random *rand.Rand) (sum int, rolls []int) {
 	for i := 0; i < len(rolls); i++ {
 		sum = sum + rolls[i]
 	}
+  sum = sum + rs.modifier
 	return sum, rolls
 }
 
